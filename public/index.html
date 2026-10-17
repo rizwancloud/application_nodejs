@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three-Tier Task Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 560px; margin: 40px auto; padding: 0 16px; }
+    h1 { text-align: center; }
+    form { display: flex; gap: 8px; margin-bottom: 20px; }
+    input { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 16px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; justify-content: space-between; align-items: center;
+         padding: 10px; border-bottom: 1px solid #ddd; }
+    .done span { text-decoration: line-through; color: #888; }
+    #status { text-align: center; font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p id="status"></p>
+  <form id="form">
+    <input id="title" placeholder="Add a task..." required>
+    <button type="submit">Add</button>
+  </form>
+  <ul id="list"></ul>
+
+  <script>
+    const list = document.getElementById('list');
+
+    async function load() {
+      const res = await fetch('/api/tasks');
+      const tasks = await res.json();
+      list.innerHTML = '';
+      tasks.forEach(t => {
+        const li = document.createElement('li');
+        if (t.done) li.className = 'done';
+        li.innerHTML = `<span>${t.title}</span>
+          <div>
+            <button onclick="toggle(${t.id})">✔</button>
+            <button onclick="del(${t.id})">✖</button>
+          </div>`;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      e.target.reset();
+      load();
+    });
+
+    async function toggle(id) { await fetch('/api/tasks/' + id, { method: 'PUT' }); load(); }
+    async function del(id) { await fetch('/api/tasks/' + id, { method: 'DELETE' }); load(); }
+
+    fetch('/health').then(r => r.json())
+      .then(d => document.getElementById('status').textContent = 'DB: ' + d.db)
+      .catch(() => document.getElementById('status').textContent = 'Backend unreachable');
+
+    load();
+  </script>
+</body>
+</html>
