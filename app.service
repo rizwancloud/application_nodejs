@@ -5,8 +5,13 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/app
 ExecStart=/usr/bin/node server.js
+ExecStartPre=/bin/mkdir -p /var/log/app
+ExecStartPre=/bin/chown ec2-user /var/log/app
+StandardOutput=append:/var/log/app/app.log
+StandardError=append:/var/log/app/app.log
 Restart=always
 User=ec2-user
+
 
 [Install]
 WantedBy=multi-user.target
